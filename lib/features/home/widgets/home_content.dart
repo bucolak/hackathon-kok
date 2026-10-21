@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../data/models/heritage_site.dart';
+import '../../../data/repositories/heritage_site_repository.dart';
 
 const _ink = Color(0xFF3E3028);
 
@@ -15,6 +17,26 @@ class HomeContent extends StatefulWidget {
 
 class _HomeContentState extends State<HomeContent> {
   String _city = 'Bursa';
+  static const _cityIds = {
+    'Bursa': 'bursa',
+    'Konya': 'konya',
+    'Hatay': 'hatay',
+  };
+  late final HeritageSiteRepository _repository;
+  late Future<List<HeritageSite>> _sites;
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = HeritageSiteRepository();
+    _sites = _repository.fetchAll(cityId: _cityIds[_city]!);
+  }
+
+  void _reload() {
+    setState(() {
+      _sites = _repository.fetchAll(cityId: _cityIds[_city]!);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +78,10 @@ class _HomeContentState extends State<HomeContent> {
                             )
                             .toList(),
                         onChanged: (city) {
-                          if (city != null) setState(() => _city = city);
+                          if (city != null && city != _city) {
+                            _city = city;
+                            _reload();
+                          }
                         },
                       ),
                     ],
@@ -98,51 +123,54 @@ class _HomeContentState extends State<HomeContent> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  if (_city == 'Bursa') ...[
-                    const Text(
-                      'Örnek seçki • Konum bilgisi kullanılmıyor.',
-                      style: TextStyle(fontSize: 12, height: 1.5),
-                    ),
-                    const SizedBox(height: 16),
-                    const _HeritageCard(
-                      name: 'Koza Han',
-                      district: 'Osmangazi',
-                    ),
-                    const SizedBox(height: 12),
-                    const _HeritageCard(
-                      name: 'Yeşil Cami',
-                      district: 'Yıldırım',
-                    ),
-                  ] else ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  FutureBuilder<List<HeritageSite>>(
+                    future: _sites,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState != ConnectionState.done) {
+                        return const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Column(
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(height: 12),
+                              Text('Eserler yükleniyor…'),
+                            ],
+                          ),
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Eserler yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.',
+                            ),
+                            TextButton(
+                              onPressed: _reload,
+                              child: const Text('Tekrar dene'),
+                            ),
+                          ],
+                        );
+                      }
+                      final sites = snapshot.data ?? [];
+                      if (sites.isEmpty) {
+                        return const Text(
+                          'Bu şehir için yayında eser bulunamadı.',
+                        );
+                      }
+                      return Column(
                         children: [
-                          const Icon(
-                            Icons.auto_stories_outlined,
-                            color: AppTheme.burgundy,
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'İçerikler hazırlanıyor',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '$_city eserleri yakında burada yer alacak.',
-                            style: const TextStyle(height: 1.5),
-                          ),
+                          for (final site in sites) ...[
+                            const SizedBox(height: 12),
+                            _HeritageCard(
+                              name: site.displayName,
+                              district: site.district,
+                            ),
+                          ],
                         ],
-                      ),
-                    ),
-                  ],
+                      );
+                    },
+                  ),
                   const SizedBox(height: 28),
                   Container(
                     width: double.infinity,
