@@ -30,7 +30,11 @@ class HeritageMap extends StatelessWidget {
     required this.onSiteTap,
     this.userLocation,
     this.tileProvider,
+    this.interactive = true,
   });
+
+  /// Sayfa içi önizlemede kapatılır; atıf ve işaretçi düğmeleri çalışır.
+  final bool interactive;
 
   final List<HeritageMapSite> sites;
   final ValueChanged<String> onSiteTap;
@@ -74,6 +78,9 @@ class HeritageMap extends StatelessWidget {
       // Aynı verilerle üst widget rebuild olduğunda kullanıcının kamerası korunur.
       key: ValueKey(Object.hashAll(distinct)),
       options: MapOptions(
+        interactionOptions: InteractionOptions(
+          flags: interactive ? InteractiveFlag.all : InteractiveFlag.none,
+        ),
         initialCenter: points.first,
         initialZoom: 16,
         maxZoom: 19,

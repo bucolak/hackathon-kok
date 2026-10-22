@@ -2,27 +2,33 @@ import 'package:flutter/material.dart';
 
 import '../../../data/models/heritage_site.dart';
 import '../../../data/repositories/heritage_site_repository.dart';
+import '../../heritage_detail/screens/heritage_detail_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
-  const DiscoverScreen({super.key});
+  const DiscoverScreen({super.key, this.loadSites});
+
+  /// Varsayılan olarak repository kullanılır; testlerde ağsız veri yüklenebilir.
+  final Future<List<HeritageSite>> Function()? loadSites;
 
   @override
   State<DiscoverScreen> createState() => _DiscoverScreenState();
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
-  final _repository = HeritageSiteRepository();
   late Future<List<HeritageSite>> _sitesFuture;
 
   @override
   void initState() {
     super.initState();
-    _sitesFuture = _repository.fetchAll();
+    _sitesFuture = _loadSites();
   }
+
+  Future<List<HeritageSite>> _loadSites() =>
+      widget.loadSites?.call() ?? HeritageSiteRepository().fetchAll();
 
   void _retry() {
     setState(() {
-      _sitesFuture = _repository.fetchAll();
+      _sitesFuture = _loadSites();
     });
   }
 
@@ -64,6 +70,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           itemBuilder: (context, index) {
             final site = sites[index];
             return ListTile(
+              onTap: () => Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (context) => HeritageDetailScreen(site: site),
+                ),
+              ),
               title: Text(site.displayName),
               subtitle: Text('${site.type} · ${site.district}'),
               trailing: const Icon(Icons.chevron_right),
