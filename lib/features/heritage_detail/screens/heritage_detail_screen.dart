@@ -23,6 +23,12 @@ class HeritageDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final title = _content(site.displayName, site.name);
+    final mapSite = HeritageMapSite(
+      id: site.id,
+      name: title,
+      latitude: site.latitude,
+      longitude: site.longitude,
+    );
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: SafeArea(
@@ -78,10 +84,7 @@ class HeritageDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  if (site.latitude.isFinite &&
-                      site.longitude.isFinite &&
-                      site.latitude.abs() <= 85.05112878 &&
-                      site.longitude.abs() <= 180)
+                  if (mapSite.hasValidCoordinates)
                     SizedBox(
                       key: const ValueKey('heritage-detail-map'),
                       height: 280,

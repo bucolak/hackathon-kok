@@ -18,8 +18,8 @@ class HeritageSite {
   final String displayName;
   final String type;
   final String source;
-  final double latitude;
-  final double longitude;
+  final double? latitude;
+  final double? longitude;
   final String? summary;
   final String? history;
 
@@ -31,8 +31,10 @@ class HeritageSite {
       displayName: map['guncel_ad'] as String,
       type: map['eser_turu'] as String,
       source: map['kaynak'] as String,
-      latitude: (map['enlem'] as num).toDouble(),
-      longitude: (map['boylam'] as num).toDouble(),
+      latitude: map['enlem'] is num ? (map['enlem'] as num).toDouble() : null,
+      longitude: map['boylam'] is num
+          ? (map['boylam'] as num).toDouble()
+          : null,
       summary: map['ozet'] as String?,
       history: map['tarihce'] as String?,
     );

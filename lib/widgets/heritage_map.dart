@@ -18,6 +18,15 @@ class HeritageMapSite {
   final String name;
   final double? latitude;
   final double? longitude;
+
+  /// Web Mercator sınırları dahil haritada gösterilebilir koordinat kontrolü.
+  bool get hasValidCoordinates =>
+      DiscoveryLocation(
+        id: id,
+        latitude: latitude,
+        longitude: longitude,
+      ).hasValidCoordinates &&
+      latitude!.abs() <= 85.05112878;
 }
 
 /// Sınırlı genişlik/yükseklik sağlayan bir üst widget içinde kullanılmalıdır.
@@ -31,10 +40,13 @@ class HeritageMap extends StatelessWidget {
     this.userLocation,
     this.tileProvider,
     this.interactive = true,
+    this.onTileError,
   });
 
   /// Sayfa içi önizlemede kapatılır; atıf ve işaretçi düğmeleri çalışır.
   final bool interactive;
+
+  final VoidCallback? onTileError;
 
   final List<HeritageMapSite> sites;
   final ValueChanged<String> onSiteTap;
@@ -47,15 +59,15 @@ class HeritageMap extends StatelessWidget {
   // Web Mercator kutupları gösteremez. Coğrafi aralık doğrulamasına ek olarak
   // bu projeksiyon sınırının dışındaki konumları da güvenle atlıyoruz.
   static LatLng? _point(double? latitude, double? longitude) {
-    final location = DiscoveryLocation(
+    if (!HeritageMapSite(
       id: '',
+      name: '',
       latitude: latitude,
       longitude: longitude,
-    );
-    if (!location.hasValidCoordinates || latitude!.abs() > 85.05112878) {
+    ).hasValidCoordinates) {
       return null;
     }
-    return LatLng(latitude, longitude!);
+    return LatLng(latitude!, longitude!);
   }
 
   @override
@@ -97,6 +109,7 @@ class HeritageMap extends StatelessWidget {
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
           userAgentPackageName: 'com.hackathon.hackathon_kok',
           maxNativeZoom: 19,
+          errorTileCallback: (tile, error, stackTrace) => onTileError?.call(),
           panBuffer: 0,
           // Varsayılan NetworkTileProvider, HTTP başlıklarına göre yerel
           // önbellek kullanır. Özel bir sağlayıcı verilmedikçe devre dışı bırakılmaz.
